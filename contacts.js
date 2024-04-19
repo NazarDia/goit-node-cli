@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
+import { nanoid } from "nanoid";
 
 const contactsPath = path.resolve("db", "contacts.json");
 
@@ -17,12 +18,17 @@ export async function listContacts() {
 
 export async function getContactById(contactId) {
   const contacts = await listContacts();
-  return contacts.find((contact) => contact.id === contactId);
+  const result = contacts.filter((f) => f.id === contactId)[0];
+  if (result.length === 0) {
+    return null;
+  } else {
+    return result;
+  }
 }
 
 export async function addContact(name, email, phone) {
-  const newContact = { name, email, phone };
   const contacts = await listContacts();
+  const newContact = { id: nanoid(), name, email, phone };
   contacts.push(newContact);
   await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
   return newContact;
@@ -30,8 +36,12 @@ export async function addContact(name, email, phone) {
 
 export async function removeContact(contactId) {
   const contacts = await listContacts();
-  const updatedContacts = contacts.filter(
-    (contact) => contact.id !== contactId
-  );
-  await fs.writeFile(contactsPath, JSON.stringify(updatedContacts, null, 2));
+  const index = contacts.findIndex((item) => item.id === contactId);
+  if (index === -1) {
+    return null;
+  } else {
+    const deletedData = contacts.splice(index, 1)[0];
+    await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
+    return deletedData;
+  }
 }
